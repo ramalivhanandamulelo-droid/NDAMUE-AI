@@ -7,101 +7,81 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      background: #111;
+      color: #fff;
+      text-align: center;
       margin: 0;
-      flex-direction: column;
+      padding: 0;
     }
-    #log {
-      width: 90%;
-      max-width: 600px;
-      height: 300px;
-      overflow-y: auto;
-      border: 2px solid #38bdf8;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      background: #1e293b;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
+    .container { padding: 20px; }
     button {
       padding: 10px 20px;
+      margin: 10px;
       border: none;
       border-radius: 8px;
-      font-size: 16px;
+      background: #00bcd4;
+      color: white;
       cursor: pointer;
-      transition: 0.3s;
+      font-size: 16px;
     }
-    #activateBtn {
-      background: #22c55e;
-      color: white;
-    }
-    #deactivateBtn {
-      background: #ef4444;
-      color: white;
-    }
-    button:hover {
-      opacity: 0.8;
-    }
-    #textInput {
-      width: 80%;
+    button:hover { background: #0097a7; }
+    #chat {
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      text-align: left;
+      background: #222;
       padding: 10px;
+      border-radius: 10px;
+    }
+    .user { color: #4caf50; margin: 5px 0; }
+    .bot { color: #ff9800; margin: 5px 0; }
+    #textInput {
+      padding: 10px;
+      width: 70%;
       border-radius: 8px;
       border: none;
-      margin-right: 10px;
     }
-    #sendBtn {
-      background: #3b82f6;
-      color: white;
-    }
+    .input-area { margin-top: 15px; }
   </style>
 </head>
 <body>
-  <h1>🤖 RAM'S AI</h1>
-  <div id="log"></div>
-  
-  <div class="controls">
-    <button id="activateBtn">Activate</button>
-    <button id="deactivateBtn">Deactivate</button>
-  </div>
+  <div class="container">
+    <h1>🤖 RAM'S AI</h1>
+    <button id="toggleBtn">Activate RAM'S</button>
+    <div id="status">🔴 Inactive</div>
 
-  <div class="controls">
-    <input type="text" id="textInput" placeholder="Type your question...">
-    <button id="sendBtn">Send</button>
+    <div class="input-area">
+      <input type="text" id="textInput" placeholder="Type something...">
+      <button id="sendBtn">Send</button>
+    </div>
+
+    <div id="chat"></div>
   </div>
 
   <script>
-    const log = document.getElementById("log");
-    const activateBtn = document.getElementById("activateBtn");
-    const deactivateBtn = document.getElementById("deactivateBtn");
-    const textInput = document.getElementById("textInput");
-    const sendBtn = document.getElementById("sendBtn");
-
+    let active = false;
     let recognition;
-    let listening = false;
+    const OPENAI_API_KEY = "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";
 
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      utterance.rate = 1.1;
+      utterance.rate = 1.2;
       speechSynthesis.speak(utterance);
     }
 
     async function askOpenAI(question) {
       try {
+        // Special owner rule
+        if (question.toLowerCase().includes("who is your creator") || question.toLowerCase().includes("who is your owner")) {
+          return "My creator is NDAMUE RAMS.";
+        }
+
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer sk-xxxxxxxxxxxxxxxxxxxx" // replace with your key
+            "Authorization": `Bearer ${OPENAI_API_KEY}`
           },
           body: JSON.stringify({
             model: "gpt-4o-mini",
@@ -109,38 +89,20 @@
           })
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
         const data = await response.json();
-        return data.choices?.[0]?.message?.content || "I don’t know how to answer that.";
-      } catch (error) {
-        console.error("OpenAI error:", error);
-        return "Sorry, I had trouble getting an answer just now.";
+        return data.choices?.[0]?.message?.content || "I couldn't find an answer.";
+      } catch (err) {
+        console.error(err);
+        return "⚠️ Error talking to RAM'S brain.";
       }
     }
 
-    async function processQuestion(question) {
-      log.innerHTML += `<div><b>You:</b> ${question}</div>`;
-
-      // Special case: owner
-      if (question.toLowerCase().includes("who is your owner") ||
-          question.toLowerCase().includes("who created you") ||
-          question.toLowerCase().includes("who is your creator")) {
-        const ownerAnswer = "NDAMUE RAMS";
-        speak(ownerAnswer);
-        log.innerHTML += `<div><b>RAM'S:</b> ${ownerAnswer}</div>`;
-        return;
-      }
-
-      // Instant feedback
-      speak("Okay, let me think...");
-
-      // Fetch AI answer
+    async function handleQuestion(question) {
+      const chatBox = document.getElementById("chat");
+      chatBox.innerHTML += `<div class="user">🧑: ${question}</div>`;
       const answer = await askOpenAI(question);
+      chatBox.innerHTML += `<div class="bot">🤖: ${answer}</div>`;
       speak(answer);
-      log.innerHTML += `<div><b>RAM'S:</b> ${answer}</div>`;
     }
 
     function startListening() {
@@ -151,34 +113,46 @@
 
       recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        processQuestion(transcript);
+        // Listen only when RAMS is called
+        if (transcript.toLowerCase().includes("hey rams")) {
+          speak("Yes?");
+          const question = transcript.replace(/hey rams/gi, "").trim();
+          if (question) handleQuestion(question);
+        }
       };
 
       recognition.start();
+      recognition.onend = () => {
+        if (active) recognition.start(); // auto restart recognition
+      };
     }
 
-    activateBtn.onclick = () => {
-      if (!listening) {
-        listening = true;
+    document.getElementById("toggleBtn").addEventListener("click", () => {
+      active = !active;
+      const status = document.getElementById("status");
+      if (active) {
+        status.textContent = "🟢 RAM'S AI Active";
+        speak("RAM'S AI Active");
+        document.getElementById("toggleBtn").textContent = "Deactivate RAM'S";
         startListening();
-        speak("RAMS AI Active");
+      } else {
+        status.textContent = "🔴 Inactive";
+        speak("RAM'S AI Deactivated");
+        document.getElementById("toggleBtn").textContent = "Activate RAM'S";
+        if (recognition) recognition.stop();
       }
-    };
+    });
 
-    deactivateBtn.onclick = () => {
-      if (listening) {
-        listening = false;
-        recognition.stop();
-        speak("RAMS AI Deactivated");
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      const input = document.getElementById("textInput");
+      const question = input.value.trim();
+      if (question && active) {
+        handleQuestion(question);
+        input.value = "";
+      } else if (!active) {
+        alert("Activate RAM'S first!");
       }
-    };
-
-    sendBtn.onclick = () => {
-      const question = textInput.value.trim();
-      if (question === "") return;
-      textInput.value = "";
-      processQuestion(question);
-    };
+    });
   </script>
 </body>
 </html>
