@@ -42,18 +42,9 @@
       overflow-y: auto;
       text-align: left;
     }
-    .user {
-      color: #00ffff;
-      margin-bottom: 5px;
-    }
-    .rams {
-      color: #ff69b4;
-      margin-bottom: 10px;
-    }
-    .thinking {
-      font-style: italic;
-      color: #ccc;
-    }
+    .user { color: #00ffff; margin-bottom: 5px; }
+    .rams { color: #ff69b4; margin-bottom: 10px; }
+    .thinking { font-style: italic; color: #ccc; }
   </style>
 </head>
 <body>
@@ -68,40 +59,45 @@
     const OPENAI_API_KEY = "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";
     const log = document.getElementById("log");
 
-    // === Always-on Speech Recognition ===
+    // === Key commands for instant reply ===
+    const instantCommands = [
+      { keywords: ["who is your owner", "who created you", "who is your creator"], reply: "NDAMUE RAMS" },
+      { keywords: ["hello", "hi"], reply: "Hello! I am RAM'S, your AI assistant." },
+      { keywords: ["how are you"], reply: "I am fine, thanks for asking!" }
+    ];
+
+    // === Speech Recognition Setup ===
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.lang = 'en-US';
-    recognition.interimResults = false;
+    recognition.interimResults = true;
 
     recognition.onresult = async (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
       if (!transcript.toLowerCase().includes("hey rams")) return;
 
-      const command = transcript.toLowerCase().replace("hey rams", "").trim();
+      let command = transcript.toLowerCase().replace("hey rams", "").trim();
+      if(command.length === 0) command = "Hi"; // default if no command after wake word
+
       appendLog(`You: ${command}`, 'user');
 
-      // Check owner questions
-      const ownerQuestions = ["who is your owner", "who created you", "who is your creator"];
-      if (ownerQuestions.some(q => command.includes(q))) {
-        const ownerAnswer = "NDAMUE RAMS";
-        speak(ownerAnswer);
-        appendLog(`RAM'S: ${ownerAnswer}`, 'rams');
+      // Check instant commands
+      const matched = instantCommands.find(cmd =>
+        cmd.keywords.some(k => command.includes(k))
+      );
+      if (matched) {
+        speak(matched.reply);
+        appendLog(`RAM'S: ${matched.reply}`, 'rams');
         return;
       }
 
-      if (command.length === 0) {
-        const defaultResponse = "Yes, what do you want me to do?";
-        speak(defaultResponse);
-        appendLog(`RAM'S: ${defaultResponse}`, 'rams');
-        return;
-      }
+      // Instant acknowledgment while AI thinks
+      const thinkingMsg = "Let me answer that...";
+      speak(thinkingMsg);
+      appendLog(`RAM'S: ${thinkingMsg}`, 'rams');
 
-      // Thinking
-      appendLog("RAM'S is thinking...", 'thinking');
-
-      // Get response from OpenAI
+      // Fetch AI response
       try {
         const answer = await askOpenAI(command);
         speak(answer);
@@ -116,7 +112,7 @@
     recognition.onerror = (event) => {
       console.error("Recognition error:", event.error);
       recognition.stop();
-      setTimeout(() => recognition.start(), 1000); // restart if error
+      setTimeout(() => recognition.start(), 1000); // restart
     };
 
     recognition.onend = () => {
