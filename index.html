@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAM'S AI Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    #log {
+      margin-top: 20px;
+      max-width: 600px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>👋 RAM'S AI Assistant</h1>
+  <p>Say "Hey RAM'S" then ask your question.</p>
+  <button id="startBtn">🎤 Start Listening</button>
+  <div id="log"></div>
+
+  <script>
+    // === CONFIG ===
+    const OPENAI_API_KEY = "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";
+
+    // === Speech Recognition ===
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.lang = 'en-US';
+
+    const startBtn = document.getElementById("startBtn");
+    const log = document.getElementById("log");
+
+    startBtn.addEventListener("click", () => {
+      recognition.start();
+      log.innerHTML = "🎧 Listening... Say 'Hey RAM'S'";
+    });
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      log.innerHTML = `You said: ${transcript}`;
+      
+      if (transcript.toLowerCase().includes("hey rams")) {
+        const command = transcript.toLowerCase().replace("hey rams", "").trim();
+        if (command.length > 0) {
+          log.innerHTML = `🤔 Thinking about: "${command}"`;
+          const answer = await askOpenAI(command);
+          speak(answer);
+          log.innerHTML = `You: ${command}<br>RAM'S: ${answer}`;
+        } else {
+          speak("Yes, what do you want me to do?");
+        }
+      }
+    };
+
+    // === Ask OpenAI ===
+    async function askOpenAI(question) {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [{role: "user", content: question}],
+          temperature: 0.7
+        })
+      });
+      const data = await response.json();
+      return data.choices[0].message.content;
+    }
+
+    // === Speak the answer ===
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      speechSynthesis.speak(utterance);
+    }
+  </script>
+</body>
+</html>
