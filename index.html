@@ -3,98 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAM'S AI Assistant</title>
+<title>RAM'S GPT Twin</title>
 <style>
-body { background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: white; font-family: Arial, sans-serif; }
-h1 { margin-bottom: 20px; }
-.orb { width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, #00f5ff, #006d77); box-shadow: 0 0 30px #00f5ff, 0 0 60px #00f5ff; margin: 20px auto; animation: idle 2s infinite; transition: box-shadow 0.3s; }
-@keyframes idle { 0% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; } 50% { transform: scale(1.05); box-shadow: 0 0 40px #00f5ff; } 100% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; } }
-@keyframes listening { 0% { transform: scale(1); box-shadow: 0 0 20px lime; } 50% { transform: scale(1.15); box-shadow: 0 0 50px lime; } 100% { transform: scale(1); box-shadow: 0 0 20px lime; } }
-#activateBtn { padding: 12px 30px; font-size: 1.2rem; border: none; border-radius: 10px; background: #00f5ff; color: #000; font-weight: bold; cursor: pointer; }
-#activateBtn:hover { background: #00d4e0; }
+body { margin:0; font-family: Arial, sans-serif; background:#202123; color:#fff; display:flex; flex-direction:column; height:100vh; }
+header { padding:10px 20px; background:#343541; display:flex; align-items:center; gap:10px; }
+header h1 { margin:0; font-size:1.2rem; }
+#chat { flex:1; padding:10px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+.message { padding:10px 15px; border-radius:10px; max-width:70%; word-wrap:break-word; }
+.user { background:#10a37f; color:#fff; align-self:flex-end; }
+.ai { background:#444654; color:#fff; align-self:flex-start; position:relative; }
+.typing { font-style:italic; opacity:0.7; }
+#inputArea { display:flex; padding:10px; background:#343541; gap:5px; }
+#textInput { flex:1; padding:10px; border-radius:8px; border:none; font-size:1rem; background:#40414f; color:#fff; }
+#sendBtn { padding:10px 15px; border:none; border-radius:8px; background:#10a37f; color:#fff; font-weight:bold; cursor:pointer; }
+.orb { width:40px; height:40px; border-radius:50%; background: radial-gradient(circle,#00f5ff,#006d77); box-shadow:0 0 20px #00f5ff,0 0 40px #00f5ff; cursor:pointer; }
 </style>
 </head>
 <body>
-<h1>🤖 RAM'S AI Assistant</h1>
-<div class="orb" id="orb"></div>
-<button id="activateBtn">Activate RAM'S</button>
+<header>
+  <div class="orb" id="orb"></div>
+  <h1>RAM'S GPT Twin</h1>
+</header>
+<div id="chat"></div>
+<div id="inputArea">
+  <input type="text" id="textInput" placeholder="Type a message..." />
+  <button id="sendBtn">Send</button>
+</div>
 
 <script>
-const OPENAI_API_KEY = "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";
+const chatDiv = document.getElementById("chat");
+const textInput = document.getElementById("textInput");
+const sendBtn = document.getElementById("sendBtn");
 const orb = document.getElementById("orb");
-const activateBtn = document.getElementById("activateBtn");
 
 let voices = [];
-speechSynthesis.onvoiceschanged = () => { voices = speechSynthesis.getVoices(); };
+speechSynthesis.onvoiceschanged = ()=>{ voices=speechSynthesis.getVoices(); };
 
-const fallbackReplies = ["I'm doing great, NDAMUE RAMS!", "RAM'S AI at your service!", "Hello there!", "My creator is NDAMUE RAMS!"];
+// Conversation memory
+let messages = [];
 
-async function askOpenAI(question) {
-  try {
-    orb.style.boxShadow = "0 0 60px yellow"; // thinking glow
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "You are RAM'S AI, friendly and smart assistant." },
-          { role: "user", content: question }
-        ]
-      })
-    });
-    const data = await res.json();
-    orb.style.boxShadow = "0 0 30px #00f5ff, 0 0 60px #00f5ff"; // back to normal
-    return data.choices[0]?.message?.content || fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-  } catch {
-    orb.style.boxShadow = "0 0 30px #00f5ff, 0 0 60px #00f5ff";
-    return fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-  }
+// Add message to chat
+function addMessage(text,sender){
+  const div=document.createElement("div");
+  div.className="message "+sender;
+  div.innerText=text;
+  chatDiv.appendChild(div);
+  chatDiv.scrollTop=chatDiv.scrollHeight;
 }
 
-function speak(text, callback) {
+// Simulate AI thinking with typing effect
+function typingEffect(text, callback){
+  const div=document.createElement("div");
+  div.className="message ai typing";
+  chatDiv.appendChild(div);
+  let i=0;
+  const interval=setInterval(()=>{
+    div.innerText=text.substring(0,i+1)+"▌";
+    i++;
+    if(i>=text.length){
+      clearInterval(interval);
+      div.classList.remove("typing");
+      div.innerText=text;
+      chatDiv.scrollTop=chatDiv.scrollHeight;
+      callback();
+    }
+    chatDiv.scrollTop=chatDiv.scrollHeight;
+  },25);
+}
+
+// Mock AI response (twin of ChatGPT)
+async function getAIResponse(question){
+  // Here we simulate intelligence for demo
+  // You can later replace this with real OpenAI API calls
+  const lower=question.toLowerCase();
+  if(lower.includes("hello")) return "Hello! How can I assist you today?";
+  if(lower.includes("how are you")) return "I'm just code, but thanks for asking! How about you?";
+  if(lower.includes("your name")) return "I am RAM'S GPT Twin, your smart AI assistant.";
+  if(lower.includes("creator") || lower.includes("owner")) return "My creator is NDAMUE RAMS.";
+  // Default demo response
+  return "I hear you! Let's pretend I'm a smart AI like ChatGPT and answer everything!";
+}
+
+// Handle user input
+async function sendMessage(){
+  const question=textInput.value.trim();
+  if(!question) return;
+  addMessage(question,"user");
+  textInput.value="";
+  const answer = await getAIResponse(question);
+  typingEffect(answer, ()=>{ speech(answer); });
+}
+
+// Voice output
+function speech(text){
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.voice = voices[0] || null;
-  utterance.pitch = 1.1;
-  utterance.rate = 1;
-  utterance.onend = callback;
+  utterance.voice = voices[0]||null;
+  utterance.pitch=1.1; utterance.rate=1;
   speechSynthesis.speak(utterance);
 }
 
-async function handleQuestion(question) {
-  orb.style.animation = "listening 1s infinite";
-  const answer = await askOpenAI(question);
-  orb.style.animation = "idle 2s infinite";
-  speak(answer, startListening);
-}
-
-function startListening() {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "en-US";
-  orb.style.animation = "listening 1s infinite";
+// Voice input on orb click
+function startListening(){
+  const recognition = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+  recognition.lang="en-US";
   recognition.start();
-
-  recognition.onresult = function(event) {
-    const question = event.results[0][0].transcript;
-    orb.style.animation = "idle 2s infinite";
-    handleQuestion(question);
-  };
-
-  recognition.onerror = () => {
-    orb.style.animation = "idle 2s infinite";
-    setTimeout(startListening, 1000);
-  };
+  recognition.onresult = async e=>{
+    const question = e.results[0][0].transcript;
+    addMessage(question,"user");
+    const answer = await getAIResponse(question);
+    typingEffect(answer, ()=>{ speech(answer); });
+  }
+  recognition.onerror=()=>{ console.log("Speech recognition error"); }
 }
 
-activateBtn.onclick = () => {
-  activateBtn.style.display = "none";
-  orb.style.marginTop = "0";
-  const welcome = "RAM'S AI active. How can I assist you NDAMUE RAMS?";
-  speak(welcome, startListening);
-};
+orb.onclick=startListening;
+sendBtn.onclick=sendMessage;
+textInput.addEventListener("keydown", e=>{ if(e.key==="Enter") sendMessage(); });
+
 </script>
 </body>
 </html>
