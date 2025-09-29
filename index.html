@@ -7,18 +7,15 @@
 <style>
   body {
     background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    height: 100vh; margin: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; margin: 0; color: white; font-family: Arial, sans-serif;
   }
-  h1 { margin-bottom: 10px; }
+  h1 { margin-bottom: 20px; }
   .orb {
-    width: 120px; height: 120px; border-radius: 50%;
+    width: 150px; height: 150px; border-radius: 50%;
     background: radial-gradient(circle, #00f5ff, #006d77);
     box-shadow: 0 0 30px #00f5ff, 0 0 60px #00f5ff;
-    margin: 20px;
+    margin: 20px auto;
     animation: idle 2s infinite;
   }
   @keyframes idle {
@@ -31,47 +28,29 @@
     50% { transform: scale(1.15); box-shadow: 0 0 50px lime; }
     100% { transform: scale(1); box-shadow: 0 0 20px lime; }
   }
-  .chat-box {
-    width: 80%; max-width: 600px; height: 250px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 15px; padding: 15px; overflow-y: auto;
-    margin-bottom: 15px;
-  }
-  .input-area { display: flex; gap: 10px; }
-  input {
-    flex: 1; padding: 10px; border-radius: 10px; border: none; outline: none;
-  }
-  button {
-    padding: 10px 20px; border: none;
-    border-radius: 10px; background: #00f5ff; color: #000;
+  #activateBtn {
+    padding: 12px 30px; font-size: 1.2rem;
+    border: none; border-radius: 10px; background: #00f5ff; color: #000;
     font-weight: bold; cursor: pointer;
   }
-  button:hover { background: #00d4e0; }
+  #activateBtn:hover { background: #00d4e0; }
 </style>
 </head>
 <body>
 <h1>🤖 RAM'S AI Assistant</h1>
 <div class="orb" id="orb"></div>
-<div class="chat-box" id="chatBox"></div>
-
-<div class="input-area">
-  <input type="text" id="userInput" placeholder="Type something..."/>
-  <button onclick="sendMessage()">Send</button>
-</div>
-
-<button id="activateBtn" style="margin-top:15px;padding:10px 25px;font-size:1rem;">Activate RAM'S</button>
+<button id="activateBtn">Activate RAM'S</button>
 
 <script>
-const OPENAI_API_KEY = "sk-proj-xxxxxxxx"; // replace with your working key
-const chatBox = document.getElementById("chatBox");
+const OPENAI_API_KEY = "sk-proj-xxxxxxxx"; // replace with your key
 const orb = document.getElementById("orb");
 const activateBtn = document.getElementById("activateBtn");
 
+// quick fallback answers
 const fallbackReplies = [
-  "I'm doing great, thanks for asking!",
+  "I'm doing great, NDAMUE RAMS!",
   "RAM'S AI at your service!",
-  "Interesting question, let me think...",
-  "I believe the answer lies within you 😉",
+  "Hello there!",
   "My creator is NDAMUE RAMS, the one and only!"
 ];
 
@@ -88,7 +67,10 @@ async function askOpenAI(question) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [{ role: "user", content: question }]
+        messages: [
+          { role: "system", content: "You are RAM'S AI, a fast, friendly assistant created by NDAMUE RAMS. Always answer clearly and directly." },
+          { role: "user", content: question }
+        ]
       })
     });
     const data = await res.json();
@@ -100,13 +82,6 @@ async function askOpenAI(question) {
   }
 }
 
-function addMessage(sender,text){
-  const div=document.createElement("div");
-  div.textContent=`${sender}: ${text}`;
-  chatBox.appendChild(div);
-  chatBox.scrollTop=chatBox.scrollHeight;
-}
-
 function speak(text,callback){
   const utterance=new SpeechSynthesisUtterance(text);
   utterance.voice=speechSynthesis.getVoices()[0];
@@ -116,46 +91,35 @@ function speak(text,callback){
 }
 
 async function handleQuestion(question){
-  addMessage("You",question);
   orb.style.animation="listening 1s infinite";
-  const answer = await askOpenAI(question);
-  addMessage("RAM'S",answer);
+  const answer=await askOpenAI(question);
   speak(answer,()=>startListening());
 }
 
-function sendMessage(){
-  const input=document.getElementById("userInput");
-  const question=input.value.trim();
-  if(!question) return;
-  input.value="";
-  handleQuestion(question);
-}
-
 function startListening(){
-  const recognition = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+  const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
   recognition.lang="en-US";
   orb.style.animation="listening 1s infinite";
   recognition.start();
 
   recognition.onresult=function(event){
-    const question = event.results[0][0].transcript;
+    const question=event.results[0][0].transcript;
     orb.style.animation="idle 2s infinite";
     handleQuestion(question);
   }
 
-  recognition.onerror = ()=>{
+  recognition.onerror=()=>{
     orb.style.animation="idle 2s infinite";
     setTimeout(()=>startListening(),2000);
   }
 }
 
-// ✅ Activate button
-activateBtn.onclick = ()=>{
+// activate button click
+activateBtn.onclick=()=>{
   activateBtn.style.display="none";
+  orb.style.marginTop="0"; // orb stays in centre
   const welcome="RAM'S AI active. How can I assist you NDAMUE RAMS?";
-  addMessage("RAM'S",welcome);
   speak(welcome,()=>startListening());
-  orb.style.animation="listening 1s infinite";
 }
 </script>
 </body>
