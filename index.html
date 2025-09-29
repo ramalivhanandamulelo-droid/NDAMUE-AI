@@ -78,14 +78,20 @@
   <div class="input-area">
     <input type="text" id="userInput" placeholder="Type something..."/>
     <button onclick="sendMessage()">Send</button>
-    <button onclick="startListening()">🎤</button>
   </div>
 
   <script>
-    const OPENAI_API_KEY = "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"; // ⚠️ Key is exposed
-
+    const OPENAI_API_KEY = "sk-proj-xxxxxxxx"; // replace with your key if working
     const chatBox = document.getElementById("chatBox");
     const orb = document.getElementById("orb");
+
+    const fallbackReplies = [
+      "I'm doing great, thanks for asking!",
+      "RAM'S AI at your service!",
+      "Interesting question, let me think...",
+      "I believe the answer lies within you 😉",
+      "My creator is NDAMUE RAMS, the one and only!"
+    ];
 
     async function askOpenAI(question) {
       if (/who.*(creator|owner)/i.test(question)) {
@@ -104,11 +110,16 @@
             messages: [{ role: "user", content: question }]
           })
         });
+
         const data = await res.json();
-        return data.choices[0].message.content;
+        if (data.choices && data.choices[0].message.content) {
+          return data.choices[0].message.content;
+        } else {
+          throw new Error("Empty response");
+        }
       } catch (err) {
-        console.error(err);
-        return "Sorry, I had trouble answering that.";
+        console.warn("API failed, using fallback:", err);
+        return fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
       }
     }
 
@@ -119,12 +130,22 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function speak(text) {
+    function speak(text, callback) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = speechSynthesis.getVoices().find(v => v.name.includes("Microsoft") || v.name.includes("Google")) || speechSynthesis.getVoices()[0];
+      utterance.voice = speechSynthesis.getVoices()[0];
       utterance.pitch = 1.1;
       utterance.rate = 1;
+      utterance.onend = callback;
       speechSynthesis.speak(utterance);
+    }
+
+    async function handleQuestion(question) {
+      addMessage("You", question);
+      orb.style.animation = "pulse 0.5s infinite";
+      const answer = await askOpenAI(question);
+      orb.style.animation = "pulse 2s infinite";
+      addMessage("RAM'S", answer);
+      speak(answer, () => startListening());
     }
 
     async function sendMessage() {
@@ -132,14 +153,7 @@
       const question = input.value.trim();
       if (!question) return;
       input.value = "";
-      addMessage("You", question);
-      orb.style.animation = "pulse 0.5s infinite";
-
-      const answer = await askOpenAI(question);
-      orb.style.animation = "pulse 2s infinite";
-
-      addMessage("RAM'S", answer);
-      speak(answer);
+      handleQuestion(question);
     }
 
     function startListening() {
@@ -149,14 +163,16 @@
 
       recognition.onresult = async function(event) {
         const question = event.results[0][0].transcript;
-        addMessage("You", question);
-        orb.style.animation = "pulse 0.5s infinite";
-        const answer = await askOpenAI(question);
-        orb.style.animation = "pulse 2s infinite";
-        addMessage("RAM'S", answer);
-        speak(answer);
+        handleQuestion(question);
       };
     }
+
+    // 🚀 Auto start on load
+    window.onload = () => {
+      const welcome = "RAM'S AI active. How can I assist you, NDAMUE RAMS?";
+      addMessage("RAM'S", welcome);
+      speak(welcome, () => startListening());
+    };
   </script>
 </body>
 </html>
