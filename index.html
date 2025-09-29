@@ -1,165 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RAM'S AI Assistant</title>
-  <style>
-    body {
-      background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
-      color: white;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    h1 { margin-bottom: 10px; }
-    .orb {
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #00f5ff, #006d77);
-      box-shadow: 0 0 30px #00f5ff, 0 0 60px #00f5ff;
-      margin: 20px;
-      animation: idle 2s infinite;
-    }
-    @keyframes idle {
-      0% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; }
-      50% { transform: scale(1.05); box-shadow: 0 0 40px #00f5ff; }
-      100% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; }
-    }
-    @keyframes listening {
-      0% { transform: scale(1); box-shadow: 0 0 20px lime; }
-      50% { transform: scale(1.15); box-shadow: 0 0 50px lime; }
-      100% { transform: scale(1); box-shadow: 0 0 20px lime; }
-    }
-    .chat-box {
-      width: 80%; max-width: 600px; height: 250px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 15px;
-      padding: 15px; overflow-y: auto;
-      margin-bottom: 15px;
-    }
-    .input-area {
-      display: flex; gap: 10px;
-    }
-    input {
-      flex: 1; padding: 10px;
-      border-radius: 10px; border: none; outline: none;
-    }
-    button {
-      padding: 10px 20px; border: none;
-      border-radius: 10px; background: #00f5ff; color: #000;
-      font-weight: bold; cursor: pointer;
-    }
-    button:hover { background: #00d4e0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAM'S AI Assistant</title>
+<style>
+  body {
+    background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100vh; margin: 0;
+  }
+  h1 { margin-bottom: 10px; }
+  .orb {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle, #00f5ff, #006d77);
+    box-shadow: 0 0 30px #00f5ff, 0 0 60px #00f5ff;
+    margin: 20px;
+    animation: idle 2s infinite;
+  }
+  @keyframes idle {
+    0% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; }
+    50% { transform: scale(1.05); box-shadow: 0 0 40px #00f5ff; }
+    100% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; }
+  }
+  @keyframes listening {
+    0% { transform: scale(1); box-shadow: 0 0 20px lime; }
+    50% { transform: scale(1.15); box-shadow: 0 0 50px lime; }
+    100% { transform: scale(1); box-shadow: 0 0 20px lime; }
+  }
+  .chat-box {
+    width: 80%; max-width: 600px; height: 250px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px; padding: 15px; overflow-y: auto;
+    margin-bottom: 15px;
+  }
+  .input-area { display: flex; gap: 10px; }
+  input {
+    flex: 1; padding: 10px; border-radius: 10px; border: none; outline: none;
+  }
+  button {
+    padding: 10px 20px; border: none;
+    border-radius: 10px; background: #00f5ff; color: #000;
+    font-weight: bold; cursor: pointer;
+  }
+  button:hover { background: #00d4e0; }
+</style>
 </head>
 <body>
-  <h1>🤖 RAM'S AI Assistant</h1>
-  <div class="orb" id="orb"></div>
-  <div class="chat-box" id="chatBox"></div>
+<h1>🤖 RAM'S AI Assistant</h1>
+<div class="orb" id="orb"></div>
+<div class="chat-box" id="chatBox"></div>
 
-  <div class="input-area">
-    <input type="text" id="userInput" placeholder="Type something..."/>
-    <button onclick="sendMessage()">Send</button>
-  </div>
+<div class="input-area">
+  <input type="text" id="userInput" placeholder="Type something..."/>
+  <button onclick="sendMessage()">Send</button>
+</div>
+
+<button id="activateBtn" style="margin-top:15px;padding:10px 25px;font-size:1rem;">Activate RAM'S</button>
 
 <script>
-  const OPENAI_API_KEY = "sk-proj-xxxxxxxx"; // replace with your key
-  const chatBox = document.getElementById("chatBox");
-  const orb = document.getElementById("orb");
+const OPENAI_API_KEY = "sk-proj-xxxxxxxx"; // replace with your working key
+const chatBox = document.getElementById("chatBox");
+const orb = document.getElementById("orb");
+const activateBtn = document.getElementById("activateBtn");
 
-  const fallbackReplies = [
-    "I'm doing great, thanks for asking!",
-    "RAM'S AI at your service!",
-    "Interesting question, let me think...",
-    "I believe the answer lies within you 😉",
-    "My creator is NDAMUE RAMS, the one and only!"
-  ];
+const fallbackReplies = [
+  "I'm doing great, thanks for asking!",
+  "RAM'S AI at your service!",
+  "Interesting question, let me think...",
+  "I believe the answer lies within you 😉",
+  "My creator is NDAMUE RAMS, the one and only!"
+];
 
-  async function askOpenAI(question) {
-    if (/who.*(creator|owner)/i.test(question)) {
-      return "My creator and owner is NDAMUE RAMS.";
-    }
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: question }]
-        })
-      });
-      const data = await res.json();
-      if (data.choices && data.choices[0].message.content) {
-        return data.choices[0].message.content;
-      } else { throw new Error("Empty response"); }
-    } catch {
-      return fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-    }
+async function askOpenAI(question) {
+  if (/who.*(creator|owner)/i.test(question)) {
+    return "My creator and owner is NDAMUE RAMS.";
   }
-
-  function addMessage(sender, text) {
-    const div = document.createElement("div");
-    div.textContent = `${sender}: ${text}`;
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: question }]
+      })
+    });
+    const data = await res.json();
+    if (data.choices && data.choices[0].message.content) {
+      return data.choices[0].message.content;
+    } else throw new Error("Empty response");
+  } catch {
+    return fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
   }
+}
 
-  function speak(text, callback) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = speechSynthesis.getVoices()[0];
-    utterance.pitch = 1.1; utterance.rate = 1;
-    utterance.onend = callback;
-    speechSynthesis.speak(utterance);
-  }
+function addMessage(sender,text){
+  const div=document.createElement("div");
+  div.textContent=`${sender}: ${text}`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop=chatBox.scrollHeight;
+}
 
-  async function handleQuestion(question) {
-    addMessage("You", question);
-    orb.style.animation = "listening 1s infinite";
-    const answer = await askOpenAI(question);
-    addMessage("RAM'S", answer);
-    speak(answer, () => startListening());
-  }
+function speak(text,callback){
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.voice=speechSynthesis.getVoices()[0];
+  utterance.pitch=1.1; utterance.rate=1;
+  utterance.onend=callback;
+  speechSynthesis.speak(utterance);
+}
 
-  function sendMessage() {
-    const input = document.getElementById("userInput");
-    const question = input.value.trim();
-    if (!question) return;
-    input.value = "";
+async function handleQuestion(question){
+  addMessage("You",question);
+  orb.style.animation="listening 1s infinite";
+  const answer = await askOpenAI(question);
+  addMessage("RAM'S",answer);
+  speak(answer,()=>startListening());
+}
+
+function sendMessage(){
+  const input=document.getElementById("userInput");
+  const question=input.value.trim();
+  if(!question) return;
+  input.value="";
+  handleQuestion(question);
+}
+
+function startListening(){
+  const recognition = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+  recognition.lang="en-US";
+  orb.style.animation="listening 1s infinite";
+  recognition.start();
+
+  recognition.onresult=function(event){
+    const question = event.results[0][0].transcript;
+    orb.style.animation="idle 2s infinite";
     handleQuestion(question);
   }
 
-  function startListening() {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    orb.style.animation = "listening 1s infinite";
-    recognition.start();
-
-    recognition.onresult = function(event) {
-      const question = event.results[0][0].transcript;
-      orb.style.animation = "idle 2s infinite";
-      handleQuestion(question);
-    };
-
-    recognition.onerror = () => {
-      orb.style.animation = "idle 2s infinite";
-      setTimeout(() => startListening(), 2000); // retry
-    };
+  recognition.onerror = ()=>{
+    orb.style.animation="idle 2s infinite";
+    setTimeout(()=>startListening(),2000);
   }
+}
 
-  // 🚀 Auto start
-  window.onload = () => {
-    const welcome = "RAM'S AI active. How can I assist you NDAMUE RAMS?";
-    addMessage("RAM'S", welcome);
-    speak(welcome, () => startListening());
-  };
+// ✅ Activate button
+activateBtn.onclick = ()=>{
+  activateBtn.style.display="none";
+  const welcome="RAM'S AI active. How can I assist you NDAMUE RAMS?";
+  addMessage("RAM'S",welcome);
+  speak(welcome,()=>startListening());
+  orb.style.animation="listening 1s infinite";
+}
 </script>
 </body>
 </html>
