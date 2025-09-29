@@ -5,35 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RAM'S AI Assistant</title>
 <style>
-  body {
-    background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 100vh; margin: 0; color: white; font-family: Arial, sans-serif;
-  }
-  h1 { margin-bottom: 20px; }
-  .orb {
-    width: 150px; height: 150px; border-radius: 50%;
-    background: radial-gradient(circle, #00f5ff, #006d77);
-    box-shadow: 0 0 30px #00f5ff, 0 0 60px #00f5ff;
-    margin: 20px auto;
-    animation: idle 2s infinite;
-  }
-  @keyframes idle {
-    0% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; }
-    50% { transform: scale(1.05); box-shadow: 0 0 40px #00f5ff; }
-    100% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; }
-  }
-  @keyframes listening {
-    0% { transform: scale(1); box-shadow: 0 0 20px lime; }
-    50% { transform: scale(1.15); box-shadow: 0 0 50px lime; }
-    100% { transform: scale(1); box-shadow: 0 0 20px lime; }
-  }
-  #activateBtn {
-    padding: 12px 30px; font-size: 1.2rem;
-    border: none; border-radius: 10px; background: #00f5ff; color: #000;
-    font-weight: bold; cursor: pointer;
-  }
-  #activateBtn:hover { background: #00d4e0; }
+body { background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: white; font-family: Arial, sans-serif; }
+h1 { margin-bottom: 20px; }
+.orb { width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle, #00f5ff, #006d77); box-shadow: 0 0 30px #00f5ff, 0 0 60px #00f5ff; margin: 20px auto; animation: idle 2s infinite; transition: box-shadow 0.3s; }
+@keyframes idle { 0% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; } 50% { transform: scale(1.05); box-shadow: 0 0 40px #00f5ff; } 100% { transform: scale(1); box-shadow: 0 0 20px #00f5ff; } }
+@keyframes listening { 0% { transform: scale(1); box-shadow: 0 0 20px lime; } 50% { transform: scale(1.15); box-shadow: 0 0 50px lime; } 100% { transform: scale(1); box-shadow: 0 0 20px lime; } }
+#activateBtn { padding: 12px 30px; font-size: 1.2rem; border: none; border-radius: 10px; background: #00f5ff; color: #000; font-weight: bold; cursor: pointer; }
+#activateBtn:hover { background: #00d4e0; }
 </style>
 </head>
 <body>
@@ -42,23 +20,18 @@
 <button id="activateBtn">Activate RAM'S</button>
 
 <script>
-const OPENAI_API_KEY = "sk-proj-xxxxxxxx"; // replace with your key
+const OPENAI_API_KEY = "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";
 const orb = document.getElementById("orb");
 const activateBtn = document.getElementById("activateBtn");
 
-// quick fallback answers
-const fallbackReplies = [
-  "I'm doing great, NDAMUE RAMS!",
-  "RAM'S AI at your service!",
-  "Hello there!",
-  "My creator is NDAMUE RAMS, the one and only!"
-];
+let voices = [];
+speechSynthesis.onvoiceschanged = () => { voices = speechSynthesis.getVoices(); };
+
+const fallbackReplies = ["I'm doing great, NDAMUE RAMS!", "RAM'S AI at your service!", "Hello there!", "My creator is NDAMUE RAMS!"];
 
 async function askOpenAI(question) {
-  if (/who.*(creator|owner)/i.test(question)) {
-    return "My creator and owner is NDAMUE RAMS.";
-  }
   try {
+    orb.style.boxShadow = "0 0 60px yellow"; // thinking glow
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -68,59 +41,60 @@ async function askOpenAI(question) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: "You are RAM'S AI, a fast, friendly assistant created by NDAMUE RAMS. Always answer clearly and directly." },
+          { role: "system", content: "You are RAM'S AI, friendly and smart assistant." },
           { role: "user", content: question }
         ]
       })
     });
     const data = await res.json();
-    if (data.choices && data.choices[0].message.content) {
-      return data.choices[0].message.content;
-    } else throw new Error("Empty response");
+    orb.style.boxShadow = "0 0 30px #00f5ff, 0 0 60px #00f5ff"; // back to normal
+    return data.choices[0]?.message?.content || fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
   } catch {
+    orb.style.boxShadow = "0 0 30px #00f5ff, 0 0 60px #00f5ff";
     return fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
   }
 }
 
-function speak(text,callback){
-  const utterance=new SpeechSynthesisUtterance(text);
-  utterance.voice=speechSynthesis.getVoices()[0];
-  utterance.pitch=1.1; utterance.rate=1;
-  utterance.onend=callback;
+function speak(text, callback) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = voices[0] || null;
+  utterance.pitch = 1.1;
+  utterance.rate = 1;
+  utterance.onend = callback;
   speechSynthesis.speak(utterance);
 }
 
-async function handleQuestion(question){
-  orb.style.animation="listening 1s infinite";
-  const answer=await askOpenAI(question);
-  speak(answer,()=>startListening());
+async function handleQuestion(question) {
+  orb.style.animation = "listening 1s infinite";
+  const answer = await askOpenAI(question);
+  orb.style.animation = "idle 2s infinite";
+  speak(answer, startListening);
 }
 
-function startListening(){
-  const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
-  recognition.lang="en-US";
-  orb.style.animation="listening 1s infinite";
+function startListening() {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = "en-US";
+  orb.style.animation = "listening 1s infinite";
   recognition.start();
 
-  recognition.onresult=function(event){
-    const question=event.results[0][0].transcript;
-    orb.style.animation="idle 2s infinite";
+  recognition.onresult = function(event) {
+    const question = event.results[0][0].transcript;
+    orb.style.animation = "idle 2s infinite";
     handleQuestion(question);
-  }
+  };
 
-  recognition.onerror=()=>{
-    orb.style.animation="idle 2s infinite";
-    setTimeout(()=>startListening(),2000);
-  }
+  recognition.onerror = () => {
+    orb.style.animation = "idle 2s infinite";
+    setTimeout(startListening, 1000);
+  };
 }
 
-// activate button click
-activateBtn.onclick=()=>{
-  activateBtn.style.display="none";
-  orb.style.marginTop="0"; // orb stays in centre
-  const welcome="RAM'S AI active. How can I assist you NDAMUE RAMS?";
-  speak(welcome,()=>startListening());
-}
+activateBtn.onclick = () => {
+  activateBtn.style.display = "none";
+  orb.style.marginTop = "0";
+  const welcome = "RAM'S AI active. How can I assist you NDAMUE RAMS?";
+  speak(welcome, startListening);
+};
 </script>
 </body>
 </html>
